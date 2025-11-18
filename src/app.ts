@@ -1,7 +1,6 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import errlogger  from './utils/logging/Logger.js';
 const { trace } = await import('@opentelemetry/api');
 const express = (await import('express')).default;
 const { routes } = await import('./routes/index.js');
@@ -10,15 +9,27 @@ import swaggerOutput from "./docs/swagger-generated.json" with { type: "json" };
 const swaggerUi = (await import('swagger-ui-express')).default;
 const tracer = trace.getTracer('app');
 generateAndSaveKeyPair();
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 const app = express();
-app.use(express.json());
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerOutput))
 
-// ✅ Usar la instancia del logger (esto será interceptado por OpenTelemetry)
+app.use(cors({
+    origin: "*",
+    credentials: true
+}));
+app.use(cookieParser());
+app.use(express.json());
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerOutput, {
+    swaggerOptions: {
+        persistAuthorization: true,
+    },
+}))
+
 app.use('/', routes);
 
-errlogger.info('🚀 Server started');
+app.listen(5000, '0.0.0.0');
 
-app.listen(5000, () => {
-	console.log('Listening on port 5000');
-});
+
+
+// ✅ Usar la instancia del logger (esto será interceptado por OpenTelemetry)

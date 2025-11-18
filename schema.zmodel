@@ -1,0 +1,190 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
+  output        = "../src/generated/prisma"
+  engineType    = "client"
+  runtime       = "nodejs"
+}
+
+generator kysely {
+  provider      = "prisma-kysely"
+  output        = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+
+model Usuario {
+  id              Int       @id @default(autoincrement())
+  nombre_apellido String
+  alias           String
+  alumno_iseta    Boolean   @default(false)
+  carrera_iseta   String?   @db.VarChar(30)
+  email           String    @unique 
+  contrasenia     String    @omit @password
+  activo          Boolean   @default(true)
+  rol             Rol?      @default(USUARIO)
+  createdAt       DateTime? @default(now())
+  updatedAt       DateTime? @updatedAt  
+
+  Reportes Reporte[]
+  Reportado Reporte[] @relation("UsuarioReportado")
+  mensajes Mensaje[]
+  Tema Tema[]
+  Post Post[]
+  notificaciones notificacion[]
+  @@auth
+  @@allow('read', activo)
+  @@allow('all', auth().rol == 'ADMIN')
+  @@allow('create', auth() == null)
+  @@allow('all', auth() == this)
+}
+
+model Carrera {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
+  descripcion String?
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @updatedAt
+  activa      Boolean?  @default(true)
+
+  Tema Tema[]
+  @@allow('all', auth().rol == 'ADMIN')
+  @@allow('read', activa)
+}
+
+model Tema {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  titulo      String
+  id_creador  Int     @default(auth().id)
+  creador     Usuario @relation(fields: [id_creador], references: [id])
+  contenido   String  @db.Text
+  id_carrera  Int
+  carrera     Carrera  @relation(fields: [id_carrera], references: [id])
+  fijado      Boolean  @default(false)
+  cerrado     Boolean  @default(false)
+  Post Post[]
+  Reportes Reporte[]
+  notificaciones notificacion[]
+  @@index([nombre], name: "idx_tema_nombre")
+  @@index([id_carrera], name: "idx_tema_carrera")
+  @@index([id_creador], name: "idx_tema_creador")
+  @@allow('all', auth().rol == 'ADMIN')
+  @@allow('read', !cerrado)
+  @@allow('delete', creador == auth())
+  @@allow('create', creador == auth())
+  @@allow('update', creador == auth())
+}	
+
+model Reporte {
+  id           String  @id @default(ulid())
+  descripcion  String
+  createdAt    DateTime? @default(now())
+  updatedAt    DateTime? @updatedAt
+  resuelto     Boolean?  @default(false)
+  reportador   Usuario   @relation(fields: [id_reportador], references: [id])
+  id_reportador Int      @default(auth().id)
+
+  usuario_id Int?
+  usuario_reportado Usuario? @relation("UsuarioReportado",fields: [usuario_id], references: [id])
+
+  mensaje_id Int?
+  mensaje    Mensaje? @relation(fields: [mensaje_id], references: [id])
+
+  post_id Int?
+  post    Post?    @relation(fields: [post_id], references: [id])
+
+  tema_id Int?
+  tema    Tema?    @relation(fields: [tema_id], references: [id])
+
+  notificacion notificacion[]
+  // Relaciones
+  @@allow('all', auth().rol == 'ADMIN')
+  @@allow('read', ((auth().rol == 'MODERADOR') && !resuelto))
+  @@allow('create', auth() != null)
+}
+
+model Post {
+  id         Int       @id @default(autoincrement())
+  titulo     String    @unique
+  contenido  String    @db.Text
+  published  Boolean   @default(true)
+  autor      Usuario   @relation(fields: [id_autor], references: [id])
+  id_autor   Int       @default(auth().id)
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  id_tema    Int
+  tema       Tema      @relation(fields: [id_tema], references: [id])
+  Mensaje    Mensaje[]
+  Reportes   Reporte[]
+  notificaciones notificacion[]
+  @@index([titulo], name: "idx_post_titulo")
+  @@index([id_tema], name: "idx_post_tema")
+  @@index([id_autor], name: "idx_post_autor")
+  @@allow('all', auth().rol == 'ADMIN')
+  @@allow('read', published)
+  @@allow('delete', autor == auth())
+  @@allow('create', autor == auth())
+  @@allow('update', autor == auth())
+}
+
+model Mensaje {
+  id         Int      @id @default(autoincrement())
+  contenido  String   @db.Text
+  id_autor   Int      @default(auth().id)
+  autor      Usuario  @relation(fields: [id_autor], references: [id])
+  id_post    Int
+  post       Post     @relation(fields: [id_post], references: [id])
+  respuestas Mensaje[] @relation("MensajeRespuesta")
+  contestado Mensaje? @relation("MensajeRespuesta", fields: [id_mensaje], references: [id])
+  id_mensaje Int?
+  Reportes   Reporte[]
+  notifnotificacion notificacion[]
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  @@allow('all', auth().rol == 'ADMIN')
+  @@allow('read', true)
+  @@allow('delete', autor == auth())
+  @@allow('create', autor == auth())
+  @@allow('update', autor == auth())
+}
+
+model notificacion {
+  id         Int      @id @default(autoincrement())
+  contenido  String   @db.Text
+  leido      Boolean  @default(false)
+  id_usuario Int
+  usuario    Usuario  @relation(fields: [id_usuario], references: [id])
+  id_tema    Int?
+  tema      Tema?    @relation(fields: [id_tema], references: [id])
+  id_post    Int?
+  post      Post?    @relation(fields: [id_post], references: [id])
+  id_mensaje Int?
+  Mensaje Mensaje? @relation(fields: [id_mensaje], references: [id])
+  Reporte Reporte[]
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  @@allow('all', auth().rol == 'ADMIN')
+  @@allow('read', id_usuario == auth().id)
+  @@allow('delete', id_usuario == auth().id)
+  @@allow('create', auth() != null)
+  @@allow('update', id_usuario == auth().id)
+}
+
+enum Rol {
+  ADMIN
+  MODERADOR
+  USUARIO
+}

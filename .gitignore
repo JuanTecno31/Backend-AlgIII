@@ -20,5 +20,11 @@ dist
 # ignore additional files using core.excludesFile
 # https://git-scm.com/docs/gitignore
 src/utils/keys
+<<<<<<< HEAD
 
 mysql-data/
+=======
+prisma/ca.pem
+/.history
+src/generated
+>>>>>>> 51f78d7d1e2c98d09dee3d75540073669e3de509

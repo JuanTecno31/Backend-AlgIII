@@ -1,5 +1,5 @@
 import { UserRepository } from "../../repositories/UserRepository.js";
-import { PrismaClient } from '../../generated/prisma/client.js';
+import IUserRepository from "../../repositories/interfaces/IUserRepository.js";
 import { UserService } from "../../services/UserService.js";
 import { UserController } from "../../controller/UserController.js";
 import { CarreraController } from "../../controller/CarreraController.js";
@@ -10,29 +10,73 @@ import { TemasRepository } from "../../repositories/TemasRepository.js";
 import { PostController }from "../../controller/PostController.js";
 import { PostRepository } from "../../repositories/PostRepository.js";
 import { PostService } from "../../services/PostService.js"; 
-const {CarreraRepository} = await import('../../repositories/CarreraRepository.js');
-const Prisma = new PrismaClient;
+import { MensajesController } from "../../controller/MensajesController.js";
+import { MensajesService } from "../../services/MensajesService.js";
+import { ReportsRepository } from "../../repositories/ReportsRepository.js";
+import { ReportsService } from "../../services/ReportsService.js";
+import MensajesRepository from "../../repositories/MensajesRespository.js";
+import { ReportesController } from "../../controller/ReportesController.js";
+import { CarreraRepository } from "../../repositories/CarreraRepository.js";
+import { PrismaClient } from 'db';
+import { PrismaPg } from '@prisma/adapter-pg'
+import { DB } from "db/types.js";
+import { Kysely, PostgresDialect } from "kysely";
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 5
+})
+const adapter = new PrismaPg(pool);
+export const prismaApp = new PrismaClient({adapter});
+const dialect = new PostgresDialect({
+  pool: pool
+});
+
+export const dbK = new Kysely<DB>({
+  dialect,
+});
+
+
 
 export function createUserController(): UserController {
-  const repo = new UserRepository(Prisma.usuario);
+  const repo = new UserRepository(dbK);
   const service = new UserService(repo);
   return new UserController(service);
-}
+};
 
 export function createCarreraController(): CarreraController {
-  const repo = new CarreraRepository(Prisma.carrera);
+  const repo = new CarreraRepository();
   const service = new CarreraService(repo);
   return new CarreraController(service);
-}
+};
 
 export function createTemaController(): TemasController {
-  const repo = new TemasRepository(Prisma.tema);
+  const repo = new TemasRepository();
   const service = new TemasService(repo);
   return new TemasController(service);
-}
-
+};
 export function createPostController(): PostController{
-  const repo = new PostRepository(Prisma.post);
+  const repo = new PostRepository();
   const service = new PostService(repo);
   return new PostController(service);
-}
+};
+
+export function createMensajeController(): MensajesController{
+  const repo = new MensajesRepository(dbK);
+  const service = new MensajesService(repo);
+  return new MensajesController(service);
+};
+
+/**
+ * Creates a new instance of ReportesController with the given Prisma client.
+ *
+ * @returns {ReportesController} a new instance of ReportesController
+ */
+ export function createReporteController(): ReportesController{
+  const repo = new ReportsRepository(dbK);
+  const service = new ReportsService(repo);
+  return new ReportesController(service);
+  
+};
+

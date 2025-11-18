@@ -1,0 +1,23 @@
+
+services:
+  adminer:
+    image: adminer
+    container_name: adminer_app
+    restart: always
+    ports:
+      - "8054:8080"
+    depends_on:
+      - db-pg
+  db-pg:
+    image: postgres:18.0-alpine3.22
+    container_name: iseta_db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: testdb
+    ports:
+      - 8078:5432
+    volumes:
+      - db_iseta_data:/var/lib/postgresql/data
+volumes:
+  db_iseta_data:

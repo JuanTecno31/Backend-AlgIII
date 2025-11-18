@@ -13,10 +13,27 @@ const carreraController = createCarreraController();
   next()
 }) **/
 import { trace } from '@opentelemetry/api';
+import { Carrera } from 'schemas/Carreras.schemas.js';
 
 const tracer = trace.getTracer('route-lib');
 
 router.post('/create', (req: Request, res: Response) => {
+  /*  #swagger.requestBody = {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              $ref: '#/components/schemas/carreraSchema'
+            },
+            example: {
+              "nombre": "Ingeniería en Sistemas",
+              "descripcion": "Carrera orientada al desarrollo de software",
+              "activa": true
+            }
+          }
+        },
+      }
+  */
   carreraController.create(req, res);
 })
 
@@ -34,10 +51,30 @@ router.route('/:id')
   carreraController.findById(req, res);
 }) 
 .patch((req: Request, res: Response) => {
+  
   carreraController.activateOrDeactivate(req, res);
+
+  // #swagger.autoBody = true 
 })
 .put((req: Request, res: Response) => {
+  /*  #swagger.requestBody = {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              $ref: '#/components/schemas/carreraSchema'
+            },
+            example: {
+              "nombre": "Ingeniería en Sistemas",
+              "descripcion": "Carrera orientada al desarrollo de software",
+              "activa": true
+            }
+          }
+        },
+      }
+  */
   carreraController.update(req, res);
+  // #swagger.autoBody = true 
 })
 
 export default router

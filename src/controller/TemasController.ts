@@ -1,7 +1,8 @@
-import ITemasService from "services/interfaces/ITemaService.js";
+import ITemasService from "../services/interfaces/ITemaService.js";
 import { Request, Response, NextFunction } from "express";
 import {trace, Span} from '@opentelemetry/api';
-const tracer = trace.getTracer('controller');
+import { Tema } from "../schemas/Tema.schema.js";
+//import { Tema } from "../generated/prisma/client.js"
 
 export class TemasController {
     constructor(
@@ -11,7 +12,7 @@ export class TemasController {
      public async update(req: Request, res: Response): Promise<void> {
             try {
                 const id = Number(req.params.id);
-                const tema = req.body;
+                const tema: Tema = req.body;
                 await this.TemasService.update(id, tema);
                 res.status(200).json({ message: 'Tema updated successfully' });
             } catch (error: unknown) {
@@ -35,8 +36,8 @@ export class TemasController {
     
         public async create(req: Request, res: Response): Promise<void> {
             try {
-                const Tema = req.body;
-                await this.TemasService.create(Tema);
+                const tema : Tema = req.body;
+                await this.TemasService.create(tema);
                 res.status(201).json({ message: 'Tema created successfully' });
             } catch (error: unknown) {
                 if (error instanceof Error) {
@@ -90,4 +91,15 @@ export class TemasController {
                 }
             }
         }
+
+        public async obtenerTemasAbiertos(req: Request, res: Response, ): Promise<void> {
+            try{
+                const tema = await this.TemasService.obtenerTemasAbiertos();
+                res.status(200).json(tema);
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    res.status(500).json({ message: error.message });
+                }
+        }
+    }   
 }

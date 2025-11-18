@@ -1,9 +1,22 @@
-export default interface IRepository<T> {
-  create(data: T): Promise<void>;
-  findById(id: number): Promise<Partial<T>>;
-  findAll(): Promise<T[]>;
-  update(id: number, data: T): Promise<void>;
-  delete(id: number): Promise<void>;
-  findByName(name: string): Promise<Partial<T>>;
-  activateOrDeactivate(id: number): Promise<void>;
+import { Usuario } from "db";
+import { POSTUsuario } from "../../schemas/Usuarios.schema.js";
+import { PaginationResults } from "../../types/pagination.types.js";
+
+export default interface IUserRepository {
+    create<T extends POSTUsuario>(data: T): Promise<void>;
+    findByName(name: string): Promise<Partial<Usuario[]>>;
+    findById(id: number): Promise<Partial<Usuario>>;
+    findByEmail(email: string): Promise<Partial<Usuario>>;
+    getPasswordByEmail(email: string): Promise<Usuario>;
+    findAll(): Promise<Partial<Usuario[]>>;
+    activateOrDeactivate(id: number): Promise<void>;
+    update(id: number, data: Usuario): Promise<void>;
+    delete(id: number): Promise<void>;
+    getPagination(params: {
+        page: number;
+        limit: number;
+        search?: string;
+        sortBy?: string;
+        sortOrder?: "asc" | "desc";
+    }): Promise<PaginationResults<Usuario>>;
 }
